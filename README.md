@@ -1,1 +1,1 @@
-Method uses statistical frequency of English letters in texts (IOC). As such, it's best to use large ciphertexts. 
+Method uses statistical frequency of English letters in texts (IOC). As such, it's best to use large ciphertexts. It is assumed that the key length is 4. For other key lengths, there are methods to compute most likely length, and you may simply replace the filter for dictionary. 
