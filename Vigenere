@@ -1,55 +1,69 @@
-eng = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-def gibberishcalc(cipher):
-    f = [0]*26
-    for letter in cipher:
-        f[eng.index(letter)] += 1
-    sum = 0
+ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+# Load and sanitize your dictionary
+dictionary_path = r" "
+dictionary = [word.upper() for word in open(dictionary_path) if word.strip().isalpha() and len(word.strip()) == 4]
+dictionary.append("BLUE")
+
+with open(dictionary_path) as f:
+    dictionary = []
+    for line in f:
+        word = line.strip().upper()
+        if len(word) == 4 and word.isalpha():
+            dictionary.append(word)
+print(f"Loaded {len(dictionary)} 4-letter alphabetic words")
+
+def compute_index_of_coincidence(text):
+    frequencies = [0] * 26
+    for letter in text:
+        frequencies[ALPHABET.index(letter)] += 1
+
+    N = len(text)
+    ioc_sum = 0
     for i in range(26):
-        a = f[i]*(f[i] -1)
-        b = len(cipher)*(len(cipher) - 1)
-        sum += a/b
-    return sum
-def partition(cipher,k):
-    k_part = [""]*k
-    for j in range(len(cipher)):
-        k_part[j%k] += cipher[j]
-    return k_part
-print(partition("DCSTUZ...",4))
-def gibpart(cipher, k):
-    sum = 0
-    for kth_part in partition(cipher,k):
-        sum += gibberishcalc(kth_part)
-    return sum/k
-print(gibpart("DCSTUZ...", 4))
+        numerator = frequencies[i] * (frequencies[i] - 1)
+        denominator = N * (N - 1)
+        ioc_sum += numerator / denominator if denominator != 0 else 0
+    return ioc_sum
 
-def vigenere_decrypt(cipher, key):
-    cipher_val = [0]*len(cipher)
-    for k in range(len(cipher)):
-        cipher_val[k] += eng.index(cipher[k])
-    key_val = [0]*len(key)
-    for k in range(len(key)):
-        key_val[k] += eng.index(key[k])
-    for k in range(len(cipher)):
-        cipher_val[k] = (cipher_val[k] - key_val[k%len(key)])%26
-    plaintext = ""
-    for k in range(len(cipher)):
-        plaintext += eng[cipher_val[k]]
-    return plaintext
+def partition_by_key_length(ciphertext, key_length):
+    partitions = [""] * key_length
+    for idx in range(len(ciphertext)):
+        partitions[idx % key_length] += ciphertext[idx]
+    return partitions
+
+def average_ioc_over_partitions(ciphertext, key_length):
+    ioc_total = 0
+    for substring in partition_by_key_length(ciphertext, key_length):
+        ioc_total += compute_index_of_coincidence(substring)
+    return ioc_total / key_length
+
+def vigenere_decrypt(ciphertext, key):
+    cipher_vals = [ALPHABET.index(char) for char in ciphertext]
+    key_vals = [ALPHABET.index(char) for char in key]
+    decrypted = ""
+    for i in range(len(ciphertext)):
+        shift = (cipher_vals[i] - key_vals[i % len(key)]) % 26
+        decrypted += ALPHABET[shift]
+    return decrypted
+
 def dictionary_attack(ciphertext, dictionary):
-    key_length = 4
-    pkey = []
-    for word in dictionary:
-        if len(word) == key_length:
-            pkey.append(word)
-    pplaintext_gib = []
-    for word in pkey:
-        posplaintext = vigenere_decrypt(ciphertext, word)
-        pplaintext_gib.append(gibberishcalc(posplaintext))
-    best = min(pplaintext_gib, key = lambda x:abs(x-.065))
-    truekey = pkey[pplaintext_gib.index(best)]
-    final = vigenere_decrypt(ciphertext, truekey)
-    return (truekey, final)
-ciphertext = "DCSTUZ..."
-dictionary = open(r"C:\Users\mattw\Desktop\words_alpha.txt").read().upper().splitlines()
+    #The dictionary has already been sanitized hence we only check keys of length 4.
+    candidate_keys = dictionary
 
-print(dictionary_attack(ciphertext, dictionary))
+    ioc_scores = []
+    for key in candidate_keys:
+        candidate_plaintext = vigenere_decrypt(ciphertext, key)
+        ioc = compute_index_of_coincidence(candidate_plaintext)
+        ioc_scores.append(ioc)
+
+    best_ioc = min(ioc_scores, key=lambda x: abs(x - 0.065))
+    best_key = candidate_keys[ioc_scores.index(best_ioc)]
+    final_plaintext = vigenere_decrypt(ciphertext, best_key)
+
+    return best_key, final_plaintext
+# Replace this with your actual ciphertext
+encrypted_text = " "
+
+print(partition_by_key_length(encrypted_text, 4))
+print(average_ioc_over_partitions(encrypted_text, 4))
+print(dictionary_attack(encrypted_text, dictionary))
