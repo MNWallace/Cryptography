@@ -1,8 +1,6 @@
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-# Load and sanitize your dictionary
-dictionary_path = r" "
+dictionary_path = r" " #paste file path for list of english words here
 dictionary = [word.upper() for word in open(dictionary_path) if word.strip().isalpha() and len(word.strip()) == 4]
-dictionary.append("BLUE")
 
 with open(dictionary_path) as f:
     dictionary = []
